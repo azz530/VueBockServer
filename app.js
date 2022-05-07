@@ -4,14 +4,17 @@ const cors = require('cors');
 const { expressjwt: jwt } = require('express-jwt');
 const config = require('./config');
 const userRouter = require('./router/user');
+const userinfoRouter = require('./router/userinfo');
 const port = 3000;
 
+
+app.use(express.static('avatar'));
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));//配置解析表单数据的中间件
 app.use(express.json());
 
 app.use((req, res, next) => {
-    res.cc = function (err, status = 200) {
+    res.cc = function (err, status = 0) {
         res.send({
             status,
             message: err instanceof Error ? err.message : err,
@@ -25,6 +28,7 @@ app.use(jwt({ secret: config.jwtSecretKey, algorithms: ['HS256'] }).unless({ pat
 
 
 app.use('/api', userRouter);
+app.use('/my', userinfoRouter);
 
 
 app.listen(port, () => {

@@ -33,7 +33,7 @@ exports.register = (req, res) => {
 //用户登录
 exports.login = (req, res) => {
     const userInfo = req.body;
-    const sql = 'select username,password from user where username =?';
+    const sql = 'select * from user where username =?';
     const sql1 = 'update user set isLogin = 1 where username = ?'
     db.query(sql,userInfo.username,(err,results)=>{
         if(err){
@@ -52,6 +52,7 @@ exports.login = (req, res) => {
                         return res.cc('修改用户登录状态失败',400);
                     } else {
                         const user = {...results[0],password:''};
+                        delete user.password;
                         const token = jwt.sign(user,config.jwtSecretKey,{expiresIn:config.expiresIn});
                         return res.send({
                             status:200,
