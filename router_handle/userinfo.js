@@ -85,7 +85,7 @@ exports.getMyArticle = (req, res) => {
     let pageSize = parseInt(req.query.pageSize);
     const sql = 'select * from article where user_id = ? order by article_time desc limit ?,?';
     const sql1 = 'select count(*) as total from article where user_id =?';
-    db.query(sql, [user_id,pageNum * pageSize, pageSize], (err, result) => {
+    db.query(sql, [user_id, pageNum * pageSize, pageSize], (err, result) => {
         if (err) {
             return res.cc(err.message);
         } else if (result.length <= 0) {
@@ -100,7 +100,7 @@ exports.getMyArticle = (req, res) => {
                         status: 200,
                         message: '查询成功',
                         data: result,
-                        total:total[0]['total']
+                        total: total[0]['total']
                     })
                 }
             })
@@ -120,6 +120,92 @@ exports.addArticle = (req, res) => {
             return res.cc('新增文章失败', 400);
         } else {
             return res.cc('新增文章成功', 200);
+        }
+    })
+}
+
+exports.getAllArticle = (req, res) => {
+    let pageNum = parseInt(req.query.pageNum) - 1;
+    let pageSize = parseInt(req.query.pageSize);
+    const user_id = parseInt(req.query.user_id);
+    const sortType = req.query.sortType;
+    const sql = sortType === 'time' ?   //按时间排序还是按收藏数排序
+    'select t1.article_id,t1.article_title,t1.article_tags,t1.article_time, count(t2.user_id) as collection_num from article t1 left join usercollection t2 on t1.article_id = t2.article_id group by t1.article_id order by t1.article_time desc limit ?,?':
+    'select t1.article_id,t1.article_title,t1.article_tags,t1.article_time, count(t2.user_id) as collection_num from article t1 left join usercollection t2 on t1.article_id = t2.article_id group by t1.article_id order by collection_num desc limit ?,?';
+    const sql1 = 'select count(*) as total from article';
+    const sql2 = 'select *from usercollection where user_id =?';
+    db.query(sql, [pageNum * pageSize, pageSize], (err, result) => {//查询所有文章及收藏人数
+        if (err) {
+            return res.cc(err.message);
+        } else if (result.length <= 0) {
+            return res.cc('为查询到数据', 400);
+        } else {
+            result = JSON.parse(JSON.stringify(result));
+            db.query(sql1, (err1, total) => {//文章总数
+                if (err1) {
+                    return res.cc(err1.message);
+                } else {
+                    db.query(sql2, user_id, (err2, result2) => {//通过用户id查询收藏的文章
+                        if (err2) {
+                            return res.cc(err2.message);
+                        } else {
+                            result2 = JSON.parse(JSON.stringify(result2));
+                            let IdArr = [];
+                            result2.forEach(item => {
+                                IdArr.push(item.article_id);//把用户收藏的文章id放入数组
+                            })
+                            result.map(item => {//遍历所有文章数组，判断用户收藏的文章，有则该文章状态为已收藏。
+                                if (IdArr.includes(item.article_id)) {
+                                    item.isCollection = true;
+                                } else {
+                                    item.isCollection = false;
+                                }
+                            })
+                            return res.send({
+                                status: 200,
+                                message: '查询成功',
+                                data: result,
+                                total: total[0]['total'],
+                            })
+                        }
+                    })
+                }
+            })
+        }
+    })
+
+}
+
+exports.addCollection = (req, res) => {
+    const Info = {
+        user_id: req.body.user_id,
+        article_id: req.body.article_id,
+        time: new Date(),
+    }
+    const sql = 'insert into usercollection set ?';
+    db.query(sql, Info, (err, result) => {
+        if (err) {
+            return res.cc(err.message);
+        } else if (result.affectedRows !== 1) {
+            return res.cc('收藏失败', 400);
+        } else {
+            return res.cc('收藏成功', 200);
+        }
+    })
+
+}
+
+exports.delCollection = (req,res) =>{
+    const article_id = req.body.article_id;
+    const user_id = req.body.user_id;
+    const sql = 'delete from usercollection where article_id=? and user_id=?';
+    db.query(sql,[article_id,user_id],(err,result)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(result.affectedRows !==1){
+            return res.cc('取消收藏失败',400);
+        } else {
+            return res.cc('取消收藏成功',200);
         }
     })
 }

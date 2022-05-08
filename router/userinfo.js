@@ -17,5 +17,9 @@ router.get('/getUserInfo',userinfo.getUserInfo);
 router.post('/logout',userinfo.logout);
 router.get('/getMyArticle',userinfo.getMyArticle);
 router.post('/addArticle',userinfo.addArticle);
+router.get('/getAllArticle',userinfo.getAllArticle);
+
+router.post('/addCollection',userinfo.addCollection);
+router.post('/delCollection',userinfo.delCollection);
 
 module.exports = router
