@@ -22,4 +22,6 @@ router.get('/getAllArticle',userinfo.getAllArticle);
 router.post('/addCollection',userinfo.addCollection);
 router.post('/delCollection',userinfo.delCollection);
 
+router.get('/getArticleDetails',userinfo.getArticleDetails);
+
 module.exports = router

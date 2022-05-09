@@ -209,3 +209,36 @@ exports.delCollection = (req,res) =>{
         }
     })
 }
+
+exports.getArticleDetails = (req,res) =>{
+    const article_id = req.query.article_id;
+    const user_id = parseInt(req.query.user_id);
+    const sql = 'select t1.article_id,t1.article_title,t1.article_tags,t1.article_time,t1.article_content,t2.username,t2.avatar from article t1 left join user t2 on t1.user_id = t2.user_id where t1.article_id = ?';
+    const sql1 = 'select*from usercollection where article_id = ? and user_id=?';
+    db.query(sql,article_id,(err,result)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(result.length <= 0){
+            return res.cc('获取文章详情失败',400);
+        } else {
+            result = JSON.parse(JSON.stringify(result))
+            db.query(sql1,[article_id,user_id],(err1,result1)=>{
+                if(err){
+                    return res.cc(err1.message);
+                } else {
+                    if(result1.length===1){
+                        result[0].isCollection = true;
+                    } else {
+                        result[0].isCollection = false;
+                    }
+                    return res.send({
+                        status:200,
+                        message:'获取文章详情成功',
+                        data:result[0],
+                    })
+                }
+            })
+
+        }
+    })
+}
