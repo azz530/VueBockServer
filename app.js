@@ -9,6 +9,7 @@ const port = 3000;
 
 
 app.use(express.static('avatar'));
+app.use(express.static('picture'));
 app.use(cors());
 app.use(express.urlencoded({ extended: false }));//配置解析表单数据的中间件
 app.use(express.json());
@@ -30,7 +31,12 @@ app.use(jwt({ secret: config.jwtSecretKey, algorithms: ['HS256'] }).unless({ pat
 app.use('/api', userRouter);
 app.use('/my', userinfoRouter);
 
-
+//错误中间件
+app.use((err,req,res,next)=>{
+    if(err.name === 'UnauthorizedError'){
+        return res.cc('身份认证失败',401);
+    }
+})
 app.listen(port, () => {
     console.log(`Server running at http://127.0.0.1:${port}`);
 })

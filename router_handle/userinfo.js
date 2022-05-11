@@ -1,6 +1,7 @@
 const db = require('../db');
 const config = require('../config');
 
+//退出登录
 exports.logout = (req, res) => {
     const user_id = parseInt(req.body.user_id);
     const sql = 'update user set isLogin = 0 where user_id = ?';
@@ -14,7 +15,7 @@ exports.logout = (req, res) => {
         }
     })
 }
-
+//获取用户信息
 exports.getUserInfo = (req, res) => {
     const user_id = parseInt(req.query.user_id);
     const sql = 'select * from user where user_id = ?';
@@ -34,7 +35,7 @@ exports.getUserInfo = (req, res) => {
         }
     })
 }
-
+//修改用户信息
 exports.editorUserInfo = (req, res) => {
     let avatarUrl = '';
     let userInfo = {};
@@ -78,7 +79,7 @@ exports.editorUserInfo = (req, res) => {
         }
     })
 }
-
+//获取用户发表的文章
 exports.getMyArticle = (req, res) => {
     const user_id = parseInt(req.query.user_id);
     let pageNum = parseInt(req.query.pageNum) - 1;
@@ -108,7 +109,7 @@ exports.getMyArticle = (req, res) => {
         }
     })
 }
-
+//发布文章
 exports.addArticle = (req, res) => {
     const articleInfo = req.body;
     articleInfo.article_time = new Date();
@@ -123,7 +124,7 @@ exports.addArticle = (req, res) => {
         }
     })
 }
-
+//获取所有文章
 exports.getAllArticle = (req, res) => {
     let pageNum = parseInt(req.query.pageNum) - 1;
     let pageSize = parseInt(req.query.pageSize);
@@ -175,7 +176,7 @@ exports.getAllArticle = (req, res) => {
     })
 
 }
-
+//添加收藏
 exports.addCollection = (req, res) => {
     const Info = {
         user_id: req.body.user_id,
@@ -194,7 +195,7 @@ exports.addCollection = (req, res) => {
     })
 
 }
-
+//取消收藏
 exports.delCollection = (req,res) =>{
     const article_id = req.body.article_id;
     const user_id = req.body.user_id;
@@ -209,11 +210,17 @@ exports.delCollection = (req,res) =>{
         }
     })
 }
-
+//获取文章信息、评论信息、回复信息
 exports.getArticleDetails = (req,res) =>{
     const article_id = req.query.article_id;
     const user_id = parseInt(req.query.user_id);
+    //搜索文章内容
     const sql = 'select t1.article_id,t1.article_title,t1.article_tags,t1.article_time,t1.article_content,t2.username,t2.avatar from article t1 left join user t2 on t1.user_id = t2.user_id where t1.article_id = ?';
+    //搜索对文章的评论
+    const sql_comment = 'select comments_id,comments_content,comments_time,avatar,username,comments_uid from comments left join user on comments.comments_uid = user.user_id left join article on comments.comments_articleid = article.article_id where article_id = ?';
+    //搜索对评论的回复内容
+    const sql_replay = 'select replay_id,replay_content,replay_time,replay.comments_id,fromUser.user_id as fromUid,fromUser.username as fromUsername,fromUser.avatar as fromAvatar,toUser.user_id as toUid,toUser.username as toUsername,toUser.avatar as toAvatar from replay left join comments on replay.comments_id = comments.comments_id left join article on comments.comments_articleid = article.article_id left join user fromUser on replay.from_uid = fromUser.user_id left join user toUser on replay.to_uid = toUser.user_id where article.article_id = 9 order by replay.replay_time asc'
+    //查询是否在用户的收藏当中
     const sql1 = 'select*from usercollection where article_id = ? and user_id=?';
     db.query(sql,article_id,(err,result)=>{
         if(err){
@@ -230,15 +237,113 @@ exports.getArticleDetails = (req,res) =>{
                         result[0].isCollection = true;
                     } else {
                         result[0].isCollection = false;
-                    }
-                    return res.send({
-                        status:200,
-                        message:'获取文章详情成功',
-                        data:result[0],
+                    }// 判断文章是否在用户收藏当中
+                    db.query(sql_comment,article_id,(err2,comments)=>{
+                        if(err2){
+                            return res.cc(err2.message);
+                        } else {
+                            comments = JSON.parse(JSON.stringify(comments))    
+                            result[0].comments = comments;//文章的评论信息
+                            
+                            db.query(sql_replay,article_id,(err3,replay)=>{
+                                if(err3){
+                                    return res.cc(err3.message);
+                                } else {
+                                    replay = JSON.parse(JSON.stringify(replay))
+                                    const newComments = result[0].comments.map(item=>{
+                                        const obj = {...item}
+                                        const replayArr = replay.filter(i=>i.comments_id === item.comments_id);
+                                        obj.replay = replayArr;
+                                        return obj
+                                    })//每条评论当中的回复信息
+                                    result[0].comments = newComments;
+                                    return res.send({
+                                        status:200,
+                                        message:'获取文章详情成功',
+                                        data:result[0],
+                                    })
+                                }
+                            })
+                        }
                     })
                 }
             })
 
+        }
+    })
+}
+//发表评论
+exports.addComments = (req,res) =>{
+    const commentsInfo = req.body;
+    commentsInfo.comments_time = new Date();
+    console.log(commentsInfo);
+    const sql = 'insert into comments set ?';
+    db.query(sql,commentsInfo,(err,result)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(result.affectedRows !== 1){
+            return res.cc('新增评论失败',400);
+        } else {
+            return res.cc('新增评论成功',200);
+        }
+    })
+}
+//发表回复
+exports.addReplay = (req,res) =>{
+    const replayInfo = {
+        comments_id:parseInt(req.body.comments_id),
+        from_uid:parseInt(req.body.from_uid),
+        replay_content:req.body.replay_content,
+        to_uid:parseInt(req.body.to_uid),
+        replay_time:new Date(),
+    };
+    const sql = 'insert into replay set ?';
+    db.query(sql,replayInfo,(err,result)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(result.affectedRows !== 1){
+            return res.cc('回复失败',400);
+        } else {
+            return res.cc('回复成功',200);
+        }
+    })
+}
+//获取用户相册
+exports.getMyAlbum = (req,res) =>{
+    const user_id = parseInt(req.query.user_id);
+    const sql = 'select * from album where album_uid = ? ';
+    db.query(sql,user_id,(err,result)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(result.length<=0){
+            return res.cc('暂无相册',400);
+        } else {
+            result = JSON.parse(JSON.stringify(result));
+            return res.send({
+                status:200,
+                message:'查询成功',
+                data:result
+            })
+        }
+    })
+}
+//新增相册
+exports.addAlbum = (req,res)=>{
+    const albumInfo = {
+        album_page:config.baseUrl + req.files[0].filename,
+        album_name:req.body.album_name,
+        album_description:req.body.album_description,
+        album_uid:parseInt(req.body.user_id),
+        album_time:new Date(),
+    };
+    const sql = 'insert into album set ?';
+    db.query(sql,albumInfo,(err,results)=>{
+        if(err){
+            return res.cc(err.message);
+        } else if(results.affectedRows!==1){
+            return res.cc('新增相册失败',400);
+        } else {
+            return res.cc('新增相册成功',200);
         }
     })
 }

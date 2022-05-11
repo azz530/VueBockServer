@@ -24,4 +24,21 @@ router.post('/delCollection',userinfo.delCollection);
 
 router.get('/getArticleDetails',userinfo.getArticleDetails);
 
+router.post('/addComments',userinfo.addComments);
+router.post('/addReplay',userinfo.addReplay);
+
+let Picstorage = multer.diskStorage({
+    destination:function(req,file,cb){
+        cb(null,'picture');
+    },
+    filename:function(req,file,cb){
+        cb(null,Date.now()+Math.round(Math.random()*100)+file.originalname);
+    }
+})
+let uploadPic = multer({storage:Picstorage});
+
+router.get('/getMyAlbum',userinfo.getMyAlbum);
+router.post('/addAlbum',uploadPic.any(),userinfo.addAlbum);
+
+
 module.exports = router
