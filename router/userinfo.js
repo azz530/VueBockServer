@@ -39,6 +39,11 @@ let uploadPic = multer({storage:Picstorage});
 
 router.get('/getMyAlbum',userinfo.getMyAlbum);
 router.post('/addAlbum',uploadPic.any(),userinfo.addAlbum);
+router.get('/getAlbumDetails',userinfo.getAlbumDetails);
+router.post('/uploadPhoto',uploadPic.any(),userinfo.uploadPhoto);
+router.delete('/delPhoto',userinfo.delPhoto);
+router.delete('/delAlbum',userinfo.delAlbum);
+router.post('/changeAlbum',uploadPic.any(),userinfo.changeAlbum);
 
 
 module.exports = router
