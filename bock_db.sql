@@ -11,7 +11,7 @@
  Target Server Version : 80028
  File Encoding         : 65001
 
- Date: 12/05/2022 16:26:31
+ Date: 13/05/2022 11:36:09
 */
 
 SET NAMES utf8mb4;
@@ -29,7 +29,7 @@ CREATE TABLE `album`  (
   `album_name` varchar(255) CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL DEFAULT NULL,
   `album_uid` int NULL DEFAULT NULL,
   PRIMARY KEY (`album_id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 3 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for album_photo
@@ -43,7 +43,7 @@ CREATE TABLE `album_photo`  (
   PRIMARY KEY (`photo_id`) USING BTREE,
   INDEX `albumid`(`album_id`) USING BTREE,
   CONSTRAINT `albumid` FOREIGN KEY (`album_id`) REFERENCES `album` (`album_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB AUTO_INCREMENT = 20 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for article
@@ -72,6 +72,18 @@ CREATE TABLE `comments`  (
   `comments_content` longtext CHARACTER SET utf8 COLLATE utf8_unicode_ci NULL,
   PRIMARY KEY (`comments_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 6 CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
+
+-- ----------------------------
+-- Table structure for history
+-- ----------------------------
+DROP TABLE IF EXISTS `history`;
+CREATE TABLE `history`  (
+  `history_id` int NOT NULL AUTO_INCREMENT,
+  `article_id` int NULL DEFAULT NULL,
+  `history_time` datetime NULL DEFAULT NULL,
+  `user_id` int NULL DEFAULT NULL,
+  PRIMARY KEY (`history_id`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8 COLLATE = utf8_unicode_ci ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for replay

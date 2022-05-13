@@ -44,6 +44,9 @@ router.post('/uploadPhoto',uploadPic.any(),userinfo.uploadPhoto);
 router.delete('/delPhoto',userinfo.delPhoto);
 router.delete('/delAlbum',userinfo.delAlbum);
 router.post('/changeAlbum',uploadPic.any(),userinfo.changeAlbum);
+router.get('/getMyCollection',userinfo.getMyCollection);
+router.get('/getMyHistory',userinfo.getMyHistory);
+router.post('/addHistory',userinfo.addHistory);
 
 
 module.exports = router

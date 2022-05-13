@@ -4,6 +4,7 @@ node_modules
 *.jpeg
 *.png
 *.mp4
+*.avi
 # local env files
 .env.local
 .env.*.local

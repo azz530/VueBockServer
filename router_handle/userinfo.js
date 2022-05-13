@@ -374,7 +374,7 @@ exports.getAlbumDetails = (req, res) => {
                                 message: '查询成功',
                                 data: result,
                                 total: total[0]['total'],
-                                album_name:album_name[0]['album_name'],
+                                album_name: album_name[0]['album_name'],
                             })
                         }
                     })
@@ -412,57 +412,134 @@ exports.uploadPhoto = (req, res) => {
     })
 }
 //删除照片
-exports.delPhoto = (req,res) =>{
+exports.delPhoto = (req, res) => {
     const photo_id = parseInt(req.query.photo_id);
     const sql = 'delete from album_photo where photo_id =?';
-    db.query(sql,photo_id,(err,result)=>{
-        if(err){
+    db.query(sql, photo_id, (err, result) => {
+        if (err) {
             return res.cc(err.message);
-        } else if(result.affectedRows !== 1){
-            return res.cc('删除失败',400);
+        } else if (result.affectedRows !== 1) {
+            return res.cc('删除失败', 400);
         } else {
-            return res.cc('删除成功',200);
+            return res.cc('删除成功', 200);
         }
     })
 }
 //删除相册
-exports.delAlbum = (req,res) =>{
+exports.delAlbum = (req, res) => {
     const album_id = req.query.album_id;
     const sql = 'delete from album where album_id =?';
-    db.query(sql,album_id,(err,result)=>{
-        if(err){
+    db.query(sql, album_id, (err, result) => {
+        if (err) {
             return res.cc(err.message);
-        } else if(result.affectedRows !==1){
-            return res.cc('删除失败',400);
-        }else {
-            return res.cc('删除成功',200);
+        } else if (result.affectedRows !== 1) {
+            return res.cc('删除失败', 400);
+        } else {
+            return res.cc('删除成功', 200);
         }
     })
 }
 //修改相册信息
-exports.changeAlbum = (req,res) =>{
+exports.changeAlbum = (req, res) => {
     let changeInfo = {};
     const album_id = parseInt(req.body.album_id);
-    if(req.files.length>0){
+    if (req.files.length > 0) {
         changeInfo = {
-            album_name:req.body.album_name,
-            album_description:req.body.album_description,
-            album_page:config.baseUrl + req.files[0].filename,
+            album_name: req.body.album_name,
+            album_description: req.body.album_description,
+            album_page: config.baseUrl + req.files[0].filename,
         }
     } else {
         changeInfo = {
-            album_name:req.body.album_name,
-            album_description:req.body.album_description,
+            album_name: req.body.album_name,
+            album_description: req.body.album_description,
         }
     }
     const sql = 'update album set ? where album_id =?';
-    db.query(sql,[changeInfo,album_id],(err,result)=>{
+    db.query(sql, [changeInfo, album_id], (err, result) => {
+        if (err) {
+            return res.cc(err.message);
+        } else if (result.affectedRows !== 1) {
+            return res.cc('修改失败', 400);
+        } else {
+            return res.cc('修改成功', 200);
+        }
+    })
+}
+
+exports.getMyCollection = (req, res) => {
+    const user_id = parseInt(req.query.user_id);
+    let pageNum = parseInt(req.query.pageNum) - 1;
+    let pageSize = parseInt(req.query.pageSize);
+    const sql = 'select article.article_id,article_title,article_content,article_tags,article_time from article left join usercollection collect on article.article_id = collect.article_id where collect.user_id = ? order by collect.time desc limit ?,?';
+    const sql_total = 'select count(article_id) as total from usercollection where user_id = ?';
+    db.query(sql, [user_id, pageNum * pageSize, pageSize], (err, result) => {
+        if (err) {
+            return res.cc(err.message);
+        } else if (result.length <= 0) {
+            return res.cc('该用户还未收藏文章', 400);
+        } else {
+            result = JSON.parse(JSON.stringify(result))
+            db.query(sql_total, user_id, (err1, total) => {
+                if (err1) {
+                    return res.cc(err1.message);
+                } else {
+                    return res.send({
+                        status: 200,
+                        message: '查询成功',
+                        data: result,
+                        total: total[0]['total'],
+                    })
+                }
+            })
+
+        }
+    })
+}
+
+exports.getMyHistory = (req, res) => {
+    const user_id = parseInt(req.query.user_id);
+    let pageNum = parseInt(req.query.pageNum) - 1;
+    let pageSize = parseInt(req.query.pageSize);
+    const sql = 'select article.article_id,article_title,article_content,article_tags,article_time,history_time from article left join history on article.article_id = history.article_id where history.user_id = ? order by history_time desc limit ?,?';
+    const sql_total = 'select count(article_id) as total from history where user_id = ?';
+    db.query(sql, [user_id, pageNum * pageSize, pageSize], (err, result) => {
+        if (err) {
+            return res.cc(err.message);
+        } else if (result.length <= 0) {
+            return res.cc('该用户还未看文章', 400);
+        } else {
+            result = JSON.parse(JSON.stringify(result))
+            db.query(sql_total, user_id, (err1, total) => {
+                if (err1) {
+                    return res.cc(err1.message);
+                } else {
+                    return res.send({
+                        status: 200,
+                        message: '查询成功',
+                        data: result,
+                        total: total[0]['total'],
+                    })
+                }
+            })
+
+        }
+    })
+}
+exports.addHistory = (req,res) =>{
+    const historyInfo = {
+        article_id:parseInt(req.body.article_id),
+        user_id:parseInt(req.body.user_id),
+        history_time:new Date(),
+    };
+    const sql = 'insert into history set ?';
+    db.query(sql,historyInfo,(err,result)=>{
         if(err){
             return res.cc(err.message);
         } else if(result.affectedRows !==1 ){
-            return res.cc('修改失败',400);
+            return res.cc('新增失败',400);
         } else {
-            return res.cc('修改成功',200);
+            return res.cc('新增成功',200);
         }
     })
 }
