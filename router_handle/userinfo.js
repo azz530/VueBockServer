@@ -501,7 +501,7 @@ exports.getMyHistory = (req, res) => {
     const user_id = parseInt(req.query.user_id);
     let pageNum = parseInt(req.query.pageNum) - 1;
     let pageSize = parseInt(req.query.pageSize);
-    const sql = 'select article.article_id,article_title,article_content,article_tags,article_time,history_time from article left join history on article.article_id = history.article_id where history.user_id = ? order by history_time desc limit ?,?';
+    const sql = 'select article.article_id,article_title,article_content,article_tags,article_time,history_time,count(usercollection.user_id) as collection_num from article left join history on article.article_id = history.article_id left join usercollection on article.article_id = usercollection.article_id where history.user_id = ? group by article.article_id order by history_time desc limit ?,?';
     const sql_total = 'select count(article_id) as total from history where user_id = ?';
     db.query(sql, [user_id, pageNum * pageSize, pageSize], (err, result) => {
         if (err) {
